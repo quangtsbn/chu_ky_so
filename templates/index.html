@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ứng dụng Ký số và Truyền File</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <i class="fas fa-shield-alt"></i>
+            <span>Digital Signature App</span>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="welcome-section">
+            <h1>Ứng dụng Ký số và Truyền File</h1>
+            <p class="subtitle">Bảo mật và xác thực tài liệu của bạn với công nghệ chữ ký số</p>
+        </div>
+
+        <div class="features-grid">
+            <!-- Phần sinh khóa -->
+            <div class="feature-card">
+                <div class="card-header">
+                    <i class="fas fa-key"></i>
+                    <h2>Sinh cặp khóa</h2>
+                </div>
+                <div class="card-content">
+                    <button class="btn-primary" onclick="generateKeys()">
+                        <i class="fas fa-sync"></i> Sinh cặp khóa mới
+                    </button>
+                    <div id="keys-result" class="result-box">
+                        <div class="key-group">
+                            <h3><i class="fas fa-lock"></i> Private Key:</h3>
+                            <textarea id="private-key" readonly placeholder="Private key sẽ xuất hiện ở đây..."></textarea>
+                            <button class="btn-copy" onclick="copyToClipboard('private-key')">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                        </div>
+                        <div class="key-group">
+                            <h3><i class="fas fa-unlock"></i> Public Key:</h3>
+                            <textarea id="public-key" readonly placeholder="Public key sẽ xuất hiện ở đây..."></textarea>
+                            <button class="btn-copy" onclick="copyToClipboard('public-key')">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Phần ký số file -->
+            <div class="feature-card">
+                <div class="card-header">
+                    <i class="fas fa-signature"></i>
+                    <h2>Ký số file</h2>
+                </div>
+                <div class="card-content">
+                    <form id="sign-form">
+                        <div class="form-group">
+                            <label for="sign-file">
+                                <i class="fas fa-file-upload"></i> Chọn file cần ký:
+                            </label>
+                            <div class="file-input-wrapper">
+                                <input type="file" id="sign-file" required onchange="updateFileName(this, 'sign-file-name')">
+                                <div class="file-input-custom">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <span id="sign-file-name">Chọn file hoặc kéo thả vào đây</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="sign-private-key">
+                                <i class="fas fa-key"></i> Private Key:
+                            </label>
+                            <textarea id="sign-private-key" required placeholder="Dán private key vào đây..."></textarea>
+                        </div>
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-signature"></i> Ký số
+                        </button>
+                    </form>
+                    <div id="sign-result" class="result-box">
+                        <h3><i class="fas fa-check-circle"></i> Chữ ký:</h3>
+                        <textarea id="signature" readonly placeholder="Chữ ký sẽ xuất hiện ở đây..."></textarea>
+                        <button class="btn-copy" onclick="copyToClipboard('signature')">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
+                        <div id="signed-file-info" class="signed-file-info" style="display: none;">
+                            <h3><i class="fas fa-file-signature"></i> File đã ký:</h3>
+                            <div class="file-info">
+                                <div class="file-details">
+                                    <i class="fas fa-file"></i>
+                                    <span id="signed-filename"></span>
+                                </div>
+                                <div class="file-actions">
+                                    <button class="btn-download" onclick="downloadSignedFile()">
+                                        <i class="fas fa-download"></i> Tải xuống
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Phần xác thực chữ ký -->
+            <div class="feature-card">
+                <div class="card-header">
+                    <i class="fas fa-check-double"></i>
+                    <h2>Xác thực chữ ký</h2>
+                </div>
+                <div class="card-content">
+                    <form id="verify-form">
+                        <div class="form-group">
+                            <label for="verify-file">
+                                <i class="fas fa-file-upload"></i> Chọn file cần xác thực:
+                            </label>
+                            <div class="file-input-wrapper">
+                                <input type="file" id="verify-file" required onchange="updateFileName(this, 'verify-file-name')">
+                                <div class="file-input-custom">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <span id="verify-file-name">Chọn file hoặc kéo thả vào đây</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="verify-signature">
+                                <i class="fas fa-signature"></i> Chữ ký:
+                            </label>
+                            <textarea id="verify-signature" required placeholder="Dán chữ ký vào đây..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="verify-public-key">
+                                <i class="fas fa-key"></i> Public Key:
+                            </label>
+                            <textarea id="verify-public-key" required placeholder="Dán public key vào đây..."></textarea>
+                        </div>
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-check-circle"></i> Xác thực
+                        </button>
+                    </form>
+                    <div id="verify-result" class="result-box">
+                        <h3><i class="fas fa-info-circle"></i> Kết quả xác thực:</h3>
+                        <p id="verification-status"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>&copy; 2024 Digital Signature App. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // Hàm copy to clipboard
+        function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
+            element.select();
+            document.execCommand('copy');
+            
+            // Hiển thị thông báo
+            const button = element.nextElementSibling;
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+            setTimeout(() => {
+                button.innerHTML = originalText;
+            }, 2000);
+        }
+
+        // Hàm sinh cặp khóa
+        async function generateKeys() {
+            try {
+                const button = document.querySelector('.btn-primary');
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang sinh khóa...';
+
+                const response = await fetch('/generate-keys', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                document.getElementById('private-key').value = data.private_key;
+                document.getElementById('public-key').value = data.public_key;
+
+                button.innerHTML = '<i class="fas fa-sync"></i> Sinh cặp khóa mới';
+                button.disabled = false;
+            } catch (error) {
+                alert('Lỗi khi sinh khóa: ' + error.message);
+            }
+        }
+
+        // Biến lưu tên file đã ký
+        let currentSignedFile = null;
+
+        // Hàm tải file đã ký
+        function downloadSignedFile() {
+            if (currentSignedFile) {
+                window.location.href = `/download/${currentSignedFile}`;
+            }
+        }
+
+        // Xử lý form ký số
+        document.getElementById('sign-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const button = e.target.querySelector('button');
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang ký...';
+
+            const formData = new FormData();
+            formData.append('file', document.getElementById('sign-file').files[0]);
+            formData.append('private_key', document.getElementById('sign-private-key').value);
+
+            try {
+                const response = await fetch('/sign-file', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                document.getElementById('signature').value = data.signature;
+                
+                // Hiển thị thông tin file đã ký
+                currentSignedFile = data.signed_filename;
+                document.getElementById('signed-filename').textContent = data.signed_filename;
+                document.getElementById('signed-file-info').style.display = 'block';
+
+                button.innerHTML = '<i class="fas fa-signature"></i> Ký số';
+                button.disabled = false;
+            } catch (error) {
+                alert('Lỗi khi ký số: ' + error.message);
+                button.innerHTML = '<i class="fas fa-signature"></i> Ký số';
+                button.disabled = false;
+            }
+        });
+
+        // Xử lý form xác thực
+        document.getElementById('verify-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const button = e.target.querySelector('button');
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xác thực...';
+
+            const formData = new FormData();
+            formData.append('file', document.getElementById('verify-file').files[0]);
+            formData.append('signature', document.getElementById('verify-signature').value);
+            formData.append('public_key', document.getElementById('verify-public-key').value);
+
+            try {
+                const response = await fetch('/verify-signature', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                const status = document.getElementById('verification-status');
+                
+                if (data.is_valid) {
+                    status.innerHTML = '<i class="fas fa-check-circle"></i> Chữ ký hợp lệ!';
+                    status.className = 'valid';
+                } else {
+                    status.innerHTML = '<i class="fas fa-times-circle"></i> Chữ ký không hợp lệ!';
+                    status.className = 'invalid';
+                }
+
+                button.innerHTML = '<i class="fas fa-check-circle"></i> Xác thực';
+                button.disabled = false;
+            } catch (error) {
+                alert('Lỗi khi xác thực: ' + error.message);
+                button.innerHTML = '<i class="fas fa-check-circle"></i> Xác thực';
+                button.disabled = false;
+            }
+        });
+
+        // Hàm cập nhật tên file đã chọn
+        function updateFileName(input, spanId) {
+            const span = document.getElementById(spanId);
+            if (input.files.length > 0) {
+                const fileName = input.files[0].name;
+                const fileSize = formatFileSize(input.files[0].size);
+                span.innerHTML = `<i class="fas fa-file"></i> ${fileName} <span class="file-size">(${fileSize})</span>`;
+            } else {
+                span.innerHTML = 'Chọn file hoặc kéo thả vào đây';
+            }
+        }
+
+        // Hàm định dạng kích thước file
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Xử lý drag & drop cho file input
+        const fileInputs = document.querySelectorAll('input[type="file"]');
+        fileInputs.forEach(input => {
+            const wrapper = input.parentElement;
+            
+            wrapper.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                wrapper.classList.add('dragover');
+            });
+
+            wrapper.addEventListener('dragleave', () => {
+                wrapper.classList.remove('dragover');
+            });
+
+            wrapper.addEventListener('drop', (e) => {
+                e.preventDefault();
+                wrapper.classList.remove('dragover');
+                input.files = e.dataTransfer.files;
+                // Cập nhật tên file sau khi kéo thả
+                const spanId = input.id + '-name';
+                updateFileName(input, spanId);
+            });
+        });
+    </script>
+</body>
+</html> 

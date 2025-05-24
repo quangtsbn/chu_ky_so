@@ -47,4 +47,4 @@
 Mọi đóng góp đều được hoan nghênh! Vui lòng tạo issue hoặc pull request để đóng góp cho dự án.
 
 ## Liên hệ
-Để biết thêm thông tin hoặc hỗ trợ, vui lòng liên hệ qua email: minhquangts2004@gmail.com 
+Mọi vấn đề vui lòng liên hệ qua email: minhquangts2004@gmail.com 
